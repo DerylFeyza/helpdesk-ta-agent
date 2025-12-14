@@ -27,6 +27,11 @@ async def chat(request: ChatRequest):
             else str(last_message)
         )
 
+        # Aggregate token usage from all AI messages
+        total_input_tokens = 0
+        total_output_tokens = 0
+        total_tokens = 0
+
         thought_process = []
         for msg in result["messages"]:
             msg_dict = {
@@ -45,9 +50,24 @@ async def chat(request: ChatRequest):
             if hasattr(msg, "name"):
                 msg_dict["tool_name"] = msg.name
 
+            if hasattr(msg, "usage_metadata") and msg.usage_metadata:
+                total_input_tokens += msg.usage_metadata.get("input_tokens", 0)
+                total_output_tokens += msg.usage_metadata.get("output_tokens", 0)
+                total_tokens += msg.usage_metadata.get("total_tokens", 0)
+
             thought_process.append(msg_dict)
 
-        return {"response": response_text, "thought_process": thought_process}
+        token_usage = {
+            "input_tokens": total_input_tokens,
+            "output_tokens": total_output_tokens,
+            "total_tokens": total_tokens,
+        }
+
+        return {
+            "response": response_text,
+            "thought_process": thought_process,
+            "token_usage": token_usage,
+        }
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content={"error": str(e)}
