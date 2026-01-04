@@ -2,15 +2,29 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from .lib.mongo import db_helper
+from contextlib import asynccontextmanager
 import uvicorn
-from .api.chat import chatRouter
+from .routes.chat_route import chatRouter
 
 
-load_dotenv()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    load_dotenv()
+    try:
+        connection = await db_helper.client.admin.command("ping")
+        print("MongoDB connection: ", connection)
+    except Exception as e:
+        print(f"Failed to connect to MongoDB: {e}")
+    yield
+    await db_helper.close()
+    print("MongoDB connection closed.")
+
 
 app = FastAPI(
     title="IT TA Helpdesk Agent Development",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.include_router(chatRouter)
