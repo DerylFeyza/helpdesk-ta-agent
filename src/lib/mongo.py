@@ -22,9 +22,6 @@ class MongoDBHelper:
     def get_db(self) -> AsyncDatabase[Dict[str, Any]]:
         return self.client[self._db_name]
 
-    def get_collection(self, name: str) -> AsyncCollection[Dict[str, Any]]:
-        return self.get_db()[name]
-
     async def close(self):
         if self._client:
             await self._client.close()

@@ -6,6 +6,8 @@ from .lib.mongo import db_helper
 from contextlib import asynccontextmanager
 import uvicorn
 from .routes.chat_route import chatRouter
+from .routes.utils_route import utilsRouter
+from .dependencies.provider import get_initialize_constraints_repo
 
 
 @asynccontextmanager
@@ -14,6 +16,8 @@ async def lifespan(app: FastAPI):
     try:
         connection = await db_helper.client.admin.command("ping")
         print("MongoDB connection: ", connection)
+        initialize_constraints_repo = get_initialize_constraints_repo()
+        await initialize_constraints_repo.setup()
     except Exception as e:
         print(f"Failed to connect to MongoDB: {e}")
     yield
@@ -28,6 +32,7 @@ app = FastAPI(
 )
 
 app.include_router(chatRouter)
+app.include_router(utilsRouter)
 
 
 @app.exception_handler(Exception)
